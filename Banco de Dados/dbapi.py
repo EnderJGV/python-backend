@@ -27,4 +27,33 @@ def deletar_registro(conexao, cursor, id):
     cursor.execute('DELETE FROM clientes WHERE id = ?;', data)
     conexao.commit()
 
-deletar_registro(conexao, cursor, 1)
+def inserir_muitos_registros(conexao, cursor, dados):
+    cursor.executemany('INSERT INTO clientes (nome, email) VALUES (?, ?);', dados)
+    conexao.commit()
+
+
+def recuperar_clientes(conexao, cursor, id):
+    cursor.execute('SELECT * FROM clientes WHERE id = ?;', (id,))
+    return cursor.fetchone()
+
+def listar_clientes(conexao, cursor):
+    return cursor.execute('SELECT * FROM clientes ORDER BY nome ASC;')
+
+cliente = recuperar_clientes(conexao, cursor, 2)
+print(cliente)
+
+clientes = listar_clientes(conexao, cursor)
+for cliente in clientes:
+    print(cliente)
+
+# Inserir muitos registros
+# dados = [
+#     ('João', 'joao@example.com'),
+#     ('Maria', 'maria@example.com'),
+#     ('Pedro', 'pedro@example.com'),
+#     ('Ana', 'ana@example.com'),
+#     ('Carlos', 'carlos@example.com'),
+#     ('Laura', 'laura@example.com'),
+#     ('Marcelo', 'marcelo@example.com'),
+# ]
+# inserir_muitos_registros(conexao, cursor, dados)
