@@ -7,3 +7,8 @@ conexao = sqlite3.connect(ROOT_PATH / "meu_banco.db")
 cursor = conexao.cursor()
 
 cursor.execute('CREATE TABLE IF NOT EXISTS clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, nome VARCHAR(100), email VARCHAR(150))')
+
+data = ('Giovana', 'giovana@example.com')
+
+cursor.execute('INSERT INTO clientes (nome, email) VALUES (?, ?);', data)
+conexao.commit()
