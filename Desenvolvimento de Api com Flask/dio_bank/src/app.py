@@ -1,36 +1,46 @@
-from flask import Flask, url_for, request
+import os
 
-app = Flask(__name__)
+import click
+from flask import Flask, current_app
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
 
-@app.route("/olamundo/<usuario>/<int:idade>/<float:altura>")
-def hello_world(usuario, idade, altura):
-    print(idade)
-    return {
-        "nome": usuario,
-        "idade": idade,
-        "altura": altura,
-    }
+class Base(DeclarativeBase):
+  pass
 
-@app.route("/bemvindo")
-def bem_vindo():
-    return {
-        "message": "Ola mundo"
-    }
+db = SQLAlchemy(model_class=Base)
 
-@app.route("/projects/")
-def projects():
-    return "The project page"
+@click.command('init-db')
+def init_db_command():
+    """Clear the existing data and create new tables."""
+    global db
+    with current_app.app_context():
+        db.create_all()
+    click.echo('Initialized the database.')
 
-@app.route("/about", methods=["POST", "GET"])
-def about():
-    if request.method == "GET":
-        return "This is method GET"
+def create_app(test_config=None):
+    # create and configure the app
+    app = Flask(__name__, instance_relative_config=True)
+    app.config.from_mapping(
+        SECRET_KEY='dev',
+        SQLALCHEMY_DATABASE_URI="sqlite:///dio_bank.sqlite",
+    )
+
+    if test_config is None:
+        # load the instance config, if it exists, when not testing
+        app.config.from_pyfile('config.py', silent=True)
     else:
-        return "This is method POST"
+        # load the test config if passed in
+        app.config.from_mapping(test_config)
 
-with app.test_request_context():
-    url = "/about"
-    print(url_for('bem_vindo'))
-    print(url_for('projects'))
-    print(url_for('about', next='/'))
-    print(url_for('hello_world', usuario='John Doe', idade=29, altura=1.79 ))
+
+    # a simple page that says hello
+    # @app.route('/hello')
+    # def hello():
+    #     return 'Hello, World!'
+
+    app.cli.add_command(init_db_command)
+
+    db.init_app(app)
+
+    return app
