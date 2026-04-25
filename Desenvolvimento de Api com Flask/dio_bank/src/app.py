@@ -5,20 +5,24 @@ import sqlalchemy as sa
 from datetime import datetime
 from flask import Flask, current_app
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
 
 class Base(DeclarativeBase):
   pass
 
 db = SQLAlchemy(model_class=Base)
+migrate = Migrate()
+jwt = JWTManager()
 
 class User(db.Model):
     id: Mapped[int] = mapped_column(sa.Integer, primary_key=True)
     username: Mapped[str] = mapped_column(sa.String, unique=True, nullable=False)
+    active: Mapped[bool] = mapped_column(sa.Boolean, default=True)
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r}, username={self.username!r})"
+        return f"User(id={self.id!r}, username={self.username!r}, active={self.active!r})"
 
 class Post(db.Model):
     id: Mapped[int] = mapped_column(sa.Integer, primary_key=True)
@@ -28,7 +32,7 @@ class Post(db.Model):
     author_id: Mapped[int] = mapped_column(sa.ForeignKey('user.id'))
 
     def __repr__(self) -> str:
-        return f"Post(id={self.id!r}, username={self.title!r}, author_id={self.author_id!r})" 
+        return f"Post(id={self.id!r}, title={self.title!r}, author_id={self.author_id!r})" 
 
 @click.command('init-db')
 def init_db_command():
@@ -44,6 +48,7 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         SQLALCHEMY_DATABASE_URI="sqlite:///blog.sqlite",
+        JWT_SECRET_KEY="super-secret",
     )
 
     if test_config is None:
@@ -62,12 +67,16 @@ def create_app(test_config=None):
     app.cli.add_command(init_db_command)
 
     db.init_app(app)
+    migrate.init_app(app, db)
+    jwt.init_app(app)
 
     # Register BluePrint
     from src.controllers import user
     from src.controllers import post
+    from src.controllers import auth
 
     app.register_blueprint(user.app)
     app.register_blueprint(post.app)
+    app.register_blueprint(auth.app)
 
     return app
