@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_jwt_identity # type: ignore
 from src.app import User, db
 from functools import wraps
 
@@ -19,3 +19,6 @@ def requires_role(role_name):
         
         return wrapper
     return decorator
+
+def eleva_quadrado(x):
+    return x**2
