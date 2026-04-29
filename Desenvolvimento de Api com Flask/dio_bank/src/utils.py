@@ -10,7 +10,6 @@ def requires_role(role_name):
         def wrapper(*args, **kwargs):
             user_id = int(get_jwt_identity())
             user = db.get_or_404(User, user_id)
-
             if user.role.name != role_name:
                 return {
                     'message': 'You do not have permission to access this resource'
