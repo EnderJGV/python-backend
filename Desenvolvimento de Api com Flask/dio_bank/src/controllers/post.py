@@ -2,6 +2,7 @@ from sqlalchemy import inspect
 from flask import Blueprint, request
 from src.app import Post, db
 from http import HTTPStatus
+from datetime import datetime
 
 app = Blueprint('post', __name__, url_prefix='/posts')
 
@@ -19,7 +20,7 @@ def _list_posts():
             "id": post.id,
             "title": post.title,
             "body": post.body,
-            "created_at": post.created,
+            "created_at": post.created.isoformat(),
             "author_id": post.author_id
         }
         for post in posts
@@ -41,7 +42,7 @@ def create_post():
 def get_posts():
     return {
         "posts": _list_posts()
-    }
+    }, HTTPStatus.OK
 
 # Update
 @app.route('/updateInformationPost/<int:post_id>', methods=["PATCH"])
@@ -59,10 +60,10 @@ def update_post(post_id):
         "id": post.id,
         "title": post.title,
         "body": post.body,
-        "created_at": post.created,
+        "created_at": post.created.isoformat(),
         "author_id": post.author_id,
         "message": "Post Updated!"
-    }
+    }, HTTPStatus.OK
 
 @app.route('/deletePost/<int:post_id>', methods=["DELETE"])
 def delete_post(post_id):
