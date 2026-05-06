@@ -44,7 +44,8 @@ def handle_user():
 
 
 @app.route('/<int:user_id>')
-@requires_role('admin')
+# @jwt_required()
+# @requires_role('admin')
 def get_user(user_id):
     user = db.get_or_404(User, user_id)
     return {
@@ -53,6 +54,7 @@ def get_user(user_id):
     }
 
 @app.route('/<int:user_id>', methods=["PATCH"])
+@jwt_required()
 @requires_role('admin')
 def update_user(user_id):
     user = db.get_or_404(User, user_id)
@@ -70,6 +72,7 @@ def update_user(user_id):
     }
 
 @app.route('/<int:user_id>', methods=["DELETE"])
+@jwt_required()
 @requires_role('admin')
 def delete_user(user_id):
     user = db.get_or_404(User, user_id)
