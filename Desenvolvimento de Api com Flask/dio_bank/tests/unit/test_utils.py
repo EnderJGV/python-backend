@@ -1,5 +1,3 @@
-from unittest.mock import Mock, patch
-
 import pytest #type: ignore
 from http import HTTPStatus
 from src.utils import eleva_quadrado, requires_role
@@ -20,40 +18,36 @@ def test_eleva_quadrado_falha(test_input, exc_class, msg):
         eleva_quadrado(test_input)
     assert str(exc.value) == msg
 
-def test_requires_role_sucesso():
-    mock_user = Mock()
+def test_requires_role_sucesso(mocker):
+    # Given
+    mock_user = mocker.Mock()
     mock_user.role.name = 'admin'
 
-    mock_get_jwt_identity = patch('src.utils.get_jwt_identity')
-    mock_db_get_or_404 = patch('src.utils.db.get_or_404', return_value=mock_user)
-    mock_get_jwt_identity.start()
-    mock_db_get_or_404.start()
+    mocker.patch('src.utils.get_jwt_identity')
+    mocker.patch('src.utils.db.get_or_404', return_value=mock_user)
 
+    decorated_function = requires_role('admin')(lambda: "success")
+
+    # When
+    result = decorated_function()
+
+    # Then
+    assert result == "success"
+
+def test_requires_role_fail(mocker):
+    # Given
+    mock_user = mocker.Mock()
+    mock_user.role.name = 'normal'
+
+    mocker.patch('src.utils.get_jwt_identity')
+    mocker.patch('src.utils.db.get_or_404', return_value=mock_user)
     
     decorated_function = requires_role('admin')(lambda: "success")
 
+    # When
     result = decorated_function()
 
-    assert result == "success"
-
-    mock_get_jwt_identity.stop()
-    mock_db_get_or_404.stop()
-
-def test_requires_role_fail():
-    mock_user = Mock()
-    mock_user.role.name = 'normal'
-
-    mock_get_jwt_identity = patch('src.utils.get_jwt_identity')
-    mock_db_get_or_404 = patch('src.utils.db.get_or_404', return_value=mock_user)
-    mock_get_jwt_identity.start()
-    mock_db_get_or_404.start()
-
-    decorated_function = requires_role('admin')(lambda: "success")
-
-    result = decorated_function()
+    # Then
     assert result == ({
         'message': 'You do not have permission to access this resource'
     }, HTTPStatus.FORBIDDEN)
-
-    mock_get_jwt_identity.stop()
-    mock_db_get_or_404.stop()
