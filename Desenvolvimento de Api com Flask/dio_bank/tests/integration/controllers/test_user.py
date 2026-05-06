@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from src.app import Role, User, db
+from sqlalchemy import func
 
 def test_get_user_sucess(client):
     # Given
@@ -39,3 +40,50 @@ def test_get_user_not_found(client):
 
     # Then
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+def test_create_user(client, access_token):
+
+    role_id = db.session.execute(db.select(Role.id).where(Role.name == 'admin')).scalar()
+
+    payload = {
+        "username": "jane-doe",
+        "password": "test",
+        "role_id": role_id
+    }
+
+    # When
+    response = client.post('/users/', json=payload, headers={'Authorization': f'Bearer {access_token}'})
+
+    # Then
+    assert response.status_code == HTTPStatus.CREATED
+    assert response.json == {'message': 'User Created!'}
+    assert db.session.execute(db.select(func.count(User.id))).scalar() == 2
+
+
+def test_list_users(client, access_token):
+    # Given
+    user = db.session.execute(db.select(User).where(User.username == 'john-doe')).scalar()
+
+    response = client.post('auth/login', json={
+        "username": user.username,
+        "password": user.password
+    })
+    access_token = response.json['access_token']
+
+    # When
+    respose = client.get('/users/', headers={'Authorization': f'Bearer {access_token}'})
+
+    # Then
+    assert respose.status_code == HTTPStatus.OK
+    assert respose.json == {
+        "users": [
+            {
+                "id": user.id,
+                "username": user.username,
+                "role":{
+                    "id": user.role.id,
+                    "name": user.role.name
+                }
+            }
+        ]
+    }
